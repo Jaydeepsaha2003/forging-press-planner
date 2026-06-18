@@ -1,0 +1,64 @@
+name: Build Windows installer
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build blank Windows installer
+        env:
+          FORGE_BLANK: '1'
+          # electron-builder publishing is handled in the Release step below
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:blank
+
+      - name: List built artifacts
+        shell: bash
+        run: |
+          echo "=== release/ contents ==="
+          ls -lh release/ || true
+
+      - name: Upload installer artifacts (every build)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ForgePlanner-Windows-${{ github.sha }}
+          path: |
+            release/*.exe
+            release/*.exe.blockmap
+            release/latest.yml
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Create GitHub Release (tag push only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ForgePlanner ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: false
+          files: |
+            release/*.exe
+            release/*.exe.blockmap
+            release/latest.yml

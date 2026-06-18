@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-electron/
+release/
+*.tsbuildinfo
+
+# Local databases / Excel exports
+*.db
+*.db-wal
+*.db-shm
+sample-plan.xlsx
+resources/*.db
+sample-data/*.db
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Scratch / data-builder scripts that reference local file paths
+build-db.mjs
+build-xlsx.py
+inspect.mjs
+
+# Older planning notes
+EXCEL-PLANNER-OPTIONS.md
