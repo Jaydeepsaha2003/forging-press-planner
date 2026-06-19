@@ -11,6 +11,8 @@ import {
   Trash2,
   Pencil,
   Warehouse,
+  FileDown,
+  FileUp,
   Database,
   Download,
   Upload,
@@ -41,6 +43,72 @@ import type {
 } from '../../shared/types';
 import { cn } from '../lib/cn';
 import { StatusPill } from '../components/StatusPill';
+
+/**
+ * Compact pair of buttons used in the header of every master-data tab:
+ *   📥 Template — saves an empty Excel pre-formatted for that entity
+ *   📤 Excel    — uploads a filled Excel and bulk-upserts the rows
+ */
+function ExcelBulkButtons({
+  templateChannel,
+  importChannel,
+  onImported,
+  label,
+}: {
+  templateChannel: string;
+  importChannel: string;
+  onImported: () => void;
+  label: string;
+}) {
+  const [busy, setBusy] = useState<'template' | 'import' | null>(null);
+  const handleTemplate = async () => {
+    setBusy('template');
+    const r = await fp.invoke<{ ok: boolean; message: string; path?: string }>(
+      templateChannel
+    );
+    setBusy(null);
+    if (r.ok) toast.success(`Template saved · open & fill, then Upload Excel`);
+    else if (r.message !== 'Cancelled') toast.error(r.message ?? 'Failed');
+  };
+  const handleImport = async () => {
+    setBusy('import');
+    const r = await fp.invoke<{ ok: boolean; message: string; imported_rows: number; warnings: string[] }>(
+      importChannel
+    );
+    setBusy(null);
+    if (r.ok) {
+      toast.success(r.message);
+      if (r.warnings.length) {
+        toast(`⚠ ${r.warnings.length} warning(s) — see console`, { duration: 4000 });
+        console.warn('Excel import warnings:', r.warnings);
+      }
+      onImported();
+    } else if (r.message !== 'Cancelled') {
+      toast.error(r.message);
+    }
+  };
+  return (
+    <>
+      <button
+        onClick={handleTemplate}
+        disabled={!!busy}
+        title={`Download an empty Excel template for ${label}`}
+        className="btn-ghost text-xs"
+      >
+        <FileDown className="w-4 h-4" /> Template
+      </button>
+      <button
+        onClick={handleImport}
+        disabled={!!busy}
+        title={`Upload a filled Excel to bulk-add or update ${label}`}
+        className="btn-secondary text-xs"
+      >
+        <FileUp className="w-4 h-4" />
+        {busy === 'import' ? 'Importing…' : 'Upload Excel'}
+      </button>
+    </>
+  );
+}
 
 type Tab =
   | 'company'
@@ -461,9 +529,14 @@ function PressesTab() {
       <div className="px-5 py-3 border-b border-steel-200 flex items-center justify-between bg-steel-50">
         <div>
           <h2 className="font-bold text-base">Presses · {presses.length}</h2>
-          <p className="text-xs text-steel-500">14 in-house + 12 vendor presses by default</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ExcelBulkButtons
+            templateChannel={fp.channels.PRESSES_EXCEL_TEMPLATE}
+            importChannel={fp.channels.PRESSES_EXCEL_IMPORT}
+            onImported={reload}
+            label="presses"
+          />
           {presses.length > 0 && (
             <button
               onClick={deleteAll}
@@ -694,9 +767,14 @@ function VendorsTab() {
       <div className="px-5 py-3 border-b border-steel-200 flex items-center justify-between bg-steel-50">
         <div>
           <h2 className="font-bold text-base">Vendors · {vendors.length}</h2>
-          <p className="text-xs text-steel-500">External press partners</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ExcelBulkButtons
+            templateChannel={fp.channels.VENDORS_EXCEL_TEMPLATE}
+            importChannel={fp.channels.VENDORS_EXCEL_IMPORT}
+            onImported={reload}
+            label="vendors"
+          />
           {vendors.length > 0 && (
             <button
               onClick={deleteAll}
@@ -862,9 +940,14 @@ function CustomersTab() {
       <div className="px-5 py-3 border-b border-steel-200 flex items-center justify-between bg-steel-50">
         <div>
           <h2 className="font-bold text-base">Customers · {customers.length}</h2>
-          <p className="text-xs text-steel-500">Priority tier drives re-route precedence</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ExcelBulkButtons
+            templateChannel={fp.channels.CUSTOMERS_EXCEL_TEMPLATE}
+            importChannel={fp.channels.CUSTOMERS_EXCEL_IMPORT}
+            onImported={reload}
+            label="customers"
+          />
           {customers.length > 0 && (
             <button
               onClick={deleteAll}

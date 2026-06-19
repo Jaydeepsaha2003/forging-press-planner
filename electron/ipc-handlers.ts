@@ -29,6 +29,14 @@ import { recomputePlanDerived, recomputePlanForPartMonth } from './planning';
 import { seedSampleData } from './sample-data';
 import { applyAutoDistribute, previewAutoDistribute } from './auto-distribute';
 import { exportDailyTemplate, importDailyActuals } from './daily-template';
+import {
+  downloadVendorsTemplate,
+  importVendorsFromExcel,
+  downloadCustomersTemplate,
+  importCustomersFromExcel,
+  downloadPressesTemplate,
+  importPressesFromExcel,
+} from './master-import';
 import type {
   PlanStockBreakdown,
   Press,
@@ -100,6 +108,28 @@ export function registerIpcHandlers(ipc: IpcMain, db: Database, getWin: GetWindo
     txn();
     return ids.length;
   });
+  ipc.handle(IPC.PRESSES_EXCEL_TEMPLATE, async () => {
+    const win = getWin();
+    const r = await dialog.showSaveDialog(win!, {
+      title: 'Save presses template',
+      defaultPath: 'ForgePlanner-Presses-Template.xlsx',
+      filters: [{ name: 'Excel', extensions: ['xlsx'] }],
+    });
+    if (r.canceled || !r.filePath) return { ok: false, message: 'Cancelled', path: '' };
+    await downloadPressesTemplate(r.filePath);
+    return { ok: true, message: 'Template saved.', path: r.filePath };
+  });
+  ipc.handle(IPC.PRESSES_EXCEL_IMPORT, async () => {
+    const win = getWin();
+    const r = await dialog.showOpenDialog(win!, {
+      title: 'Import presses from Excel',
+      filters: [{ name: 'Excel', extensions: ['xlsx', 'xlsm'] }],
+      properties: ['openFile'],
+    });
+    if (r.canceled || r.filePaths.length === 0)
+      return { ok: false, message: 'Cancelled', imported_rows: 0, skipped_rows: 0, warnings: [] };
+    return importPressesFromExcel(db, r.filePaths[0]!);
+  });
   ipc.handle(IPC.PRESS_SET_STATUS, (_e, id: number, status: PressStatus) => {
     db.prepare(`UPDATE presses SET current_status=?, status_changed_at=datetime('now') WHERE id=?`).run(status, id);
     emit(IPC.EVT_PRESS_STATUS_CHANGED, { id, status });
@@ -124,6 +154,28 @@ export function registerIpcHandlers(ipc: IpcMain, db: Database, getWin: GetWindo
     txn();
     return ids.length;
   });
+  ipc.handle(IPC.VENDORS_EXCEL_TEMPLATE, async () => {
+    const win = getWin();
+    const r = await dialog.showSaveDialog(win!, {
+      title: 'Save vendors template',
+      defaultPath: 'ForgePlanner-Vendors-Template.xlsx',
+      filters: [{ name: 'Excel', extensions: ['xlsx'] }],
+    });
+    if (r.canceled || !r.filePath) return { ok: false, message: 'Cancelled', path: '' };
+    await downloadVendorsTemplate(r.filePath);
+    return { ok: true, message: 'Template saved.', path: r.filePath };
+  });
+  ipc.handle(IPC.VENDORS_EXCEL_IMPORT, async () => {
+    const win = getWin();
+    const r = await dialog.showOpenDialog(win!, {
+      title: 'Import vendors from Excel',
+      filters: [{ name: 'Excel', extensions: ['xlsx', 'xlsm'] }],
+      properties: ['openFile'],
+    });
+    if (r.canceled || r.filePaths.length === 0)
+      return { ok: false, message: 'Cancelled', imported_rows: 0, skipped_rows: 0, warnings: [] };
+    return importVendorsFromExcel(db, r.filePaths[0]!);
+  });
 
   ipc.handle(IPC.CUSTOMERS_LIST, () => db.prepare('SELECT * FROM customers ORDER BY priority_tier, code').all());
   ipc.handle(IPC.CUSTOMER_UPSERT, (_e, c: { id?: number; code: string; full_name?: string; priority_tier?: string; notes?: string }) => {
@@ -142,6 +194,28 @@ export function registerIpcHandlers(ipc: IpcMain, db: Database, getWin: GetWindo
     });
     txn();
     return ids.length;
+  });
+  ipc.handle(IPC.CUSTOMERS_EXCEL_TEMPLATE, async () => {
+    const win = getWin();
+    const r = await dialog.showSaveDialog(win!, {
+      title: 'Save customers template',
+      defaultPath: 'ForgePlanner-Customers-Template.xlsx',
+      filters: [{ name: 'Excel', extensions: ['xlsx'] }],
+    });
+    if (r.canceled || !r.filePath) return { ok: false, message: 'Cancelled', path: '' };
+    await downloadCustomersTemplate(r.filePath);
+    return { ok: true, message: 'Template saved.', path: r.filePath };
+  });
+  ipc.handle(IPC.CUSTOMERS_EXCEL_IMPORT, async () => {
+    const win = getWin();
+    const r = await dialog.showOpenDialog(win!, {
+      title: 'Import customers from Excel',
+      filters: [{ name: 'Excel', extensions: ['xlsx', 'xlsm'] }],
+      properties: ['openFile'],
+    });
+    if (r.canceled || r.filePaths.length === 0)
+      return { ok: false, message: 'Cancelled', imported_rows: 0, skipped_rows: 0, warnings: [] };
+    return importCustomersFromExcel(db, r.filePaths[0]!);
   });
 
   ipc.handle(IPC.PARTS_LIST, () =>

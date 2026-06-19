@@ -6,16 +6,22 @@ export const IPC = {
   PRESS_DELETE: 'press:delete',
   PRESS_DELETE_MANY: 'press:delete-many',
   PRESS_SET_STATUS: 'press:set-status',
+  PRESSES_EXCEL_TEMPLATE: 'presses:excel-template',
+  PRESSES_EXCEL_IMPORT: 'presses:excel-import',
 
   VENDORS_LIST: 'vendors:list',
   VENDOR_UPSERT: 'vendor:upsert',
   VENDOR_DELETE: 'vendor:delete',
   VENDOR_DELETE_MANY: 'vendor:delete-many',
+  VENDORS_EXCEL_TEMPLATE: 'vendors:excel-template',
+  VENDORS_EXCEL_IMPORT: 'vendors:excel-import',
 
   CUSTOMERS_LIST: 'customers:list',
   CUSTOMER_UPSERT: 'customer:upsert',
   CUSTOMER_DELETE: 'customer:delete',
   CUSTOMER_DELETE_MANY: 'customer:delete-many',
+  CUSTOMERS_EXCEL_TEMPLATE: 'customers:excel-template',
+  CUSTOMERS_EXCEL_IMPORT: 'customers:excel-import',
 
   PARTS_LIST: 'parts:list',
   PART_UPSERT: 'part:upsert',
